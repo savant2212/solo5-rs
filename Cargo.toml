@@ -1,0 +1,10 @@
+[package]
+name = "solo5"
+version = "0.1.0"
+authors = ["Nikita Nazarenko <savant.d@gmail.com>"]
+
+[dependencies]
+volatile = "0.1.0"
+spin = "0.4"
+rlibc = "1.0.0"
+compiler_builtins = { git = "https://github.com/rust-lang-nursery/compiler-builtins" }

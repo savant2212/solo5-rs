@@ -57,8 +57,7 @@ extern "C" {
     pub fn solo5_poll(nsec:u64) -> isize;
 }
 
-pub struct Console {
-}
+pub struct Console {}
 
 impl fmt::Write for Console {
     fn write_str(&mut self, s: &str) -> fmt::Result {
@@ -96,6 +95,7 @@ macro_rules! println {
 
 #[no_mangle]
 pub unsafe fn solo5_app_main(cmdline: *const u8) -> isize {
+	CONSOLE.force_unlock();
 	let p = core::str::from_utf8(core::slice::from_raw_parts(cmdline, strlen(cmdline) as usize)).unwrap();
 	rust_main(p)
 }

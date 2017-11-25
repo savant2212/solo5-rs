@@ -7,20 +7,27 @@
 #![feature(compiler_builtins_lib)]
 #![feature(lang_items)]
 #![feature(linkage)]
+#![feature(alloc)]
+#![feature(global_allocator, allocator_api)]
 
-extern crate spin;
 extern crate compiler_builtins;
-extern crate rlibc;
+pub extern crate spin;
+pub extern crate alloc;
 
-use spin::Mutex;
-use core::fmt;
+pub mod memstub;
+use core::{fmt};
+pub use spin::Mutex;
+
+#[global_allocator]
+static GLOBAL: memstub::Solo5Allocator = memstub::Solo5Allocator;
 
 // just placeholder for compiler intrinsic
 #[no_mangle]
 pub extern "C" fn __floatundisf() {
-    loop {}
+    panic!()
 }
 
+#[allow(improper_ctypes)]
 extern { pub fn rust_main(cmdline : &str) -> isize; }
 
 unsafe fn strlen(buf : *const u8) -> usize {
@@ -31,6 +38,7 @@ unsafe fn strlen(buf : *const u8) -> usize {
 
 	return idx as usize;
 }
+
 
 #[no_mangle]
 extern "C" {
@@ -57,7 +65,7 @@ extern "C" {
     pub fn solo5_poll(nsec:u64) -> isize;
 }
 
-pub struct Console {}
+pub struct Console;
 
 impl fmt::Write for Console {
     fn write_str(&mut self, s: &str) -> fmt::Result {

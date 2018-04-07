@@ -1,14 +1,21 @@
 // implement rust allocation over solo5 malloc interface
 
-use solo5_malloc;
-use solo5_realloc;
-use solo5_free;
-
 extern crate alloc;
 
 use self::alloc::allocator::{Alloc, AllocErr, Layout};
 use core::ptr;
-pub struct Solo5Allocator;
+
+pub struct Solo5Allocator {
+    heap_start : *mut u8,
+    heap_size : usize
+}
+
+impl Solo5Allocator {
+    pub fn setup(&mut self, start: *mut u8, size : usize) {
+        self.heap_start = start;
+        self.heap_size = size;
+    }
+}
 
 unsafe impl<'a> Alloc for &'a Solo5Allocator {
     unsafe fn alloc(&mut self, layout: Layout) -> Result<*mut u8, AllocErr> {

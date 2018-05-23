@@ -7,26 +7,36 @@
 #![feature(compiler_builtins_lib)]
 #![feature(lang_items)]
 #![feature(linkage)]
-#![feature(alloc)]
-#![feature(global_allocator, allocator_api)]
+#![feature(alloc, global_allocator, allocator_api,allocator_internals)] 
 
-extern crate compiler_builtins;
 pub extern crate spin;
 pub extern crate alloc;
 
-pub mod memstub;
+extern crate alloc_cortex_m;
+extern crate rlibc;
+
+//pub mod memstub;
 use core::{fmt,ptr};
 pub use spin::Mutex;
 
-use memstub::Solo5Allocator;
-
+use alloc_cortex_m::CortexMHeap;
 #[global_allocator]
-static GLOBAL: Solo5Allocator = Solo5Allocator { heap_start: ptr::null_mut(), heap_size: 0 };
+static GLOBAL: CortexMHeap = CortexMHeap::empty();
 
-// just placeholder for compiler intrinsic
+//use memstub::Solo5Allocator;
+
+//#[global_allocator]
+//static GLOBAL: Solo5Allocator = Solo5Allocator { heap_start: ptr::null_mut(), heap_size: 0 };
+
 #[no_mangle]
 pub extern "C" fn __floatundisf() {
     panic!()
+}
+
+#[lang = "oom"]
+#[no_mangle]
+pub fn rust_oom() -> ! {
+    loop{}
 }
 
 #[allow(improper_ctypes)]
@@ -49,9 +59,10 @@ pub enum solo5_result {
 }
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct solo5_start_info {
     pub cmdline: *const u8,
-    pub heap_start: *mut u8,
+    pub heap_start: usize,
     pub heap_size: usize
 }
 
@@ -105,10 +116,12 @@ macro_rules! println {
 }
 
 #[lang = "eh_personality"] extern fn eh_personality() {}                                                                                              
-#[lang = "panic_fmt"] #[no_mangle] pub extern fn panic_fmt() -> ! {
+#[lang = "panic_fmt"] 
+#[no_mangle] 
+pub extern fn panic_fmt() -> ! {
 	unsafe{
 		println!("panic occured");
-		solo5_exit(solo5_result::SOLO5_R_EUNSPEC as isize);;
+		solo5_exit(1);;
 	}
 }
 
@@ -116,8 +129,9 @@ macro_rules! println {
 pub unsafe fn solo5_app_main(info : *const solo5_start_info) -> isize {
 	CONSOLE.force_unlock();
     // init allocator
-    GLOBAL.setup((*info).heap_start,(*info).heap_size);
+    println!("{:?}",*info);
+    GLOBAL.init((*info).heap_start,(*info).heap_size);
 	let p = core::str::from_utf8(core::slice::from_raw_parts((*info).cmdline, strlen((*info).cmdline) as usize)).unwrap();
-	rust_main(p)
+	solo5_exit(rust_main(p))
 }
 

@@ -12,21 +12,15 @@
 pub extern crate spin;
 pub extern crate alloc;
 
-extern crate alloc_cortex_m;
+//extern crate alloc_cortex_m;
 extern crate rlibc;
 
-//pub mod memstub;
 use core::{fmt,ptr};
-pub use spin::Mutex;
+use spin::Mutex;
+extern crate wee_alloc;
 
-use alloc_cortex_m::CortexMHeap;
 #[global_allocator]
-static GLOBAL: CortexMHeap = CortexMHeap::empty();
-
-//use memstub::Solo5Allocator;
-
-//#[global_allocator]
-//static GLOBAL: Solo5Allocator = Solo5Allocator { heap_start: ptr::null_mut(), heap_size: 0 };
+static GLOBAL: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[no_mangle]
 pub extern "C" fn __floatundisf() {
@@ -104,8 +98,8 @@ pub static CONSOLE : Mutex<Console> = Mutex::new(Console{});
 macro_rules! print {
     ($($arg:tt)*) => ({
         use core::fmt::Write;
-        let mut writer = $crate::CONSOLE.lock();
-        writer.write_fmt(format_args!($($arg)*)).unwrap();
+        let mut cn = $crate::CONSOLE.lock();
+        (*cn).write_fmt(format_args!($($arg)*)).unwrap();
     });
 }
 
@@ -128,7 +122,6 @@ pub extern fn panic_fmt(
 
 #[no_mangle]
 pub unsafe fn solo5_app_main(info : *const solo5_start_info) -> isize {
-	CONSOLE.force_unlock();
     // init allocator
     println!("{:?}",*info);
     GLOBAL.init((*info).heap_start,(*info).heap_size);

@@ -118,11 +118,12 @@ macro_rules! println {
 #[lang = "eh_personality"] extern fn eh_personality() {}                                                                                              
 #[lang = "panic_fmt"] 
 #[no_mangle] 
-pub extern fn panic_fmt() -> ! {
-	unsafe{
-		println!("panic occured");
-		solo5_exit(1);;
-	}
+pub extern fn panic_fmt(
+        _args: ::core::fmt::Arguments,
+        _file: &'static str,
+        _line: u32 ) -> ! {
+    println!("panic {} occured at {}:{}", _args, _file, _line);
+	unsafe {solo5_exit(1);}
 }
 
 #[no_mangle]
